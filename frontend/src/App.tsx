@@ -1,7 +1,16 @@
 import { useState } from 'react';
-import type { GetUserResponse, CreateUserPayload, CreateUserResponse, UpdateUserAgePayload, DeleteUserPayload } from './types/API';
+import {
+  getUser,
+  createUser,
+  updateUserAge,
+  deleteUser,
+} from './api/userApi';
 
-const API_BASE = "http://localhost:8000/api";
+import type {
+  CreateUserPayload,
+  DeleteUserPayload,
+  UpdateUserAgePayload,
+} from './types/API';
 
 export function App() {
   const [responseLog, setResponseLog] = useState<string>("結果がここに表示されます");
@@ -10,12 +19,9 @@ export function App() {
   const handleGet = async () => {
     try {
       const targetUserId = 'abcde';  // テスト用ID
-      const res = await fetch(`${API_BASE}/user?user_id=${targetUserId}`);
-      if (!res.ok) {
-        throw new Error('GETリクエストに失敗しました');
-      }
+      
+      const data = await getUser(targetUserId);
 
-      const data: GetUserResponse = await res.json();
       setResponseLog(JSON.stringify(data, null, 2));  // レスポンスを整形して表示
     } catch (err: any) {
       setResponseLog(`Error: ${err.message}`);
@@ -37,19 +43,8 @@ export function App() {
         favorite_foods: ['pasta', 'fish'],
       };
 
-      const res = await fetch(`${API_BASE}/user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const data = await createUser(payload);
 
-      if(!res.ok){
-        throw new Error('POSTリクエストに失敗しました');
-      }
-
-      const data: CreateUserResponse = await res.json();
       setResponseLog(JSON.stringify(data, null, 2));
     } catch (err: any) {
       setResponseLog(`Error: ${err.message}`);
@@ -64,19 +59,8 @@ export function App() {
         age: 26,
       };
 
-      const res = await fetch(`${API_BASE}/user`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const data = await updateUserAge(payload);
 
-      if(!res.ok){
-        throw new Error('PUTリクエストに失敗しました');
-      }
-
-      const data = await res.json();
       setResponseLog(JSON.stringify(data, null, 2));
     } catch (err: any) {
       setResponseLog(`Error: ${err.message}`);
@@ -88,21 +72,10 @@ export function App() {
     try {
       const payload: DeleteUserPayload = {
         user_id: 'abcde',  // テスト用ID
-      }
+      };
 
-      const res = await fetch(`${API_BASE}/user`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const data = await deleteUser(payload);
 
-      if(!res.ok){
-        throw new Error('DELETEリクエストに失敗しました');
-      }
-
-      const data = await res.json();
       setResponseLog(JSON.stringify(data, null, 2));
     } catch (err: any) {
       setResponseLog(`Error: ${err.message}`);
