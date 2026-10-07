@@ -42,7 +42,7 @@ class UserCreateRequest(BaseModel):
     user_name: str
     age: int
     hobby_list: List[HobbyItem]
-    favorit_foods: List[str]
+    favorite_foods: List[str]
 
 class UserCreateResponse(BaseModel):
     user_id: str
@@ -51,7 +51,7 @@ class GetUserResponse(BaseModel):
     user_name: str
     age: int
     hobby_list: List[HobbyItem]
-    favorit_foods: List[str]
+    favorite_foods: List[str]
 
 class UserPutRequest(BaseModel):
     user_id: str
@@ -72,7 +72,7 @@ def get_user(user_id: str):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT user_name, age, hobby_list, favorit_foods FROM users WHERE user_id = %s;", (user_id,))
+        cur.execute("SELECT user_name, age, hobby_list, favorite_foods FROM users WHERE user_id = %s;", (user_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
@@ -80,7 +80,7 @@ def get_user(user_id: str):
             "user_name": row["user_name"],
             "age": row["age"],
             "hobby_list": row["hobby_list"],
-            "favorit_foods": row["favorit_foods"]
+            "favorite_foods": row["favorite_foods"]
         }
     finally:
         cur.close()
@@ -99,7 +99,7 @@ def create_user(payload: UserCreateRequest):
         import json
         cur.execute(
             """
-            INSERT INTO users (user_id, user_name, age, hobby_list, favorit_foods)
+            INSERT INTO users (user_id, user_name, age, hobby_list, favorite_foods)
             VALUES (%s, %s, %s, %s, %s);
             """,
             (
@@ -107,7 +107,7 @@ def create_user(payload: UserCreateRequest):
                 payload.user_name,
                 payload.age,
                 json.dumps([h.dict() for h in payload.hobby_list]),
-                json.dumps(payload.favorit_foods)
+                json.dumps(payload.favorite_foods)
             )
         )
         conn.commit()
@@ -146,16 +146,33 @@ def delete_user(payload: UserDeleteRequest):
     """DELETE: 指定した user_id のユーザーを削除する"""
     conn = get_db_connection()
     cur = conn.cursor()
+
     try:
-        cur.execute("DELETE FROM users WHERE user_id = %s RETURNING user_id;", (payload.user_id,))
+        cur.execute(
+            "DELETE FROM users WHERE user_id = %s RETURNING user_id;",
+            (payload.user_id,)
+        )
+
         row = cur.fetchone()
-        conn.commit()
+
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
-        return {"status": "success", "deleted_user_id": row["user_id"]}
+
+        conn.commit()
+
+        return {
+            "status": "success",
+            "deleted_user_id": row["user_id"]
+        }
+
+    except HTTPException:
+        conn.rollback()
+        raise
+
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         cur.close()
         conn.close()
